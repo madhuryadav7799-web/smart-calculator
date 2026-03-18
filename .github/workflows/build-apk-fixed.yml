@@ -37,15 +37,25 @@ jobs:
         working-directory: apps/smart-calculator
         run: npm ci
 
+      - name: Create local.properties
+        working-directory: apps/smart-calculator/android
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          cat local.properties
+
       - name: Make Gradlew Executable
         working-directory: apps/smart-calculator/android
         run: chmod +x gradlew
 
       - name: Build Android Debug APK
-        working-directory: apps/smart-calculator
-        run: npm run prebuild -- --no-install && cd android && ./gradlew assembleDebug --build-cache
+        working-directory: apps/smart-calculator/android
+        run: |
+          ./gradlew assembleDebug \
+            --build-cache \
+            --no-daemon
         env:
           JAVA_TOOL_OPTIONS: "-Xmx4g"
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
 
       - name: Verify APK Exists
         working-directory: apps/smart-calculator
