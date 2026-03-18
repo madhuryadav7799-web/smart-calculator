@@ -1,0 +1,75 @@
+name: Deploy Download Page to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'download/**'
+      - '.github/workflows/pages-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Verify Download Page
+        run: |
+          if [ ! -f "download/index.html" ]; then
+            echo "❌ ERROR: download/index.html not found!"
+            exit 1
+          fi
+          echo "✅ Download page verified"
+          ls -lh download/
+
+      - name: Build Page (if needed)
+        run: |
+          mkdir -p _site
+          cp -r download/* _site/
+          cp -r download/.well-known _site/ 2>/dev/null || true
+          ls -la _site/
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Display Deployment Info
+        run: |
+          echo "╔════════════════════════════════════════╗"
+          echo "║  🌐 GitHub Pages Deployed            ║"
+          echo "╠════════════════════════════════════════╣"
+          echo "║  URL: ${{ steps.deployment.outputs.page_url }}"
+          echo "║  Branch: main"
+          echo "║  Source: download/"
+          echo "╚════════════════════════════════════════╝"
+
+      - name: Post Deployment Summary
+        run: |
+          echo "✅ **Download Page Deployed!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📱 **URL:** ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "📁 **Source:** \`download/\`" >> $GITHUB_STEP_SUMMARY
+          echo "⏱️ **Updated:** $(date)" >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,206 @@
+name: Build Release APK
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create GitHub Release'
+        required: true
+        default: 'true'
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract Version Info
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_tag=true" >> $GITHUB_OUTPUT
+          else
+            VERSION="dev-$(date +%s)"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is_tag=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle Dependencies
+        uses: gradle/gradle-build-action@v2
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Prebuild Android
+        run: npm run prebuild -- --no-install --clean
+
+      - name: Make Gradlew Executable
+        run: chmod +x android/gradlew
+
+      - name: Check for Release Signing Config
+        id: signing-check
+        run: |
+          if grep -q "signingConfigs" android/app/build.gradle; then
+            echo "has_signing=true" >> $GITHUB_OUTPUT
+            echo "✅ Signing config found"
+          else
+            echo "has_signing=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No signing config - will build unsigned release"
+          fi
+
+      - name: Setup Release Signing (if configured)
+        if: steps.signing-check.outputs.has_signing == 'true' && secrets.KEYSTORE_BASE64 != ''
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/local.properties
+          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/local.properties
+          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/local.properties
+          echo "✅ Keystore configured"
+
+      - name: Build Release APK (Signed)
+        if: steps.signing-check.outputs.has_signing == 'true'
+        run: |
+          cd android
+          ./gradlew assembleRelease \
+            --build-cache \
+            --parallel \
+            --workers=4
+        env:
+          JAVA_TOOL_OPTIONS: "-Xmx4g"
+
+      - name: Build Release APK (Unsigned)
+        if: steps.signing-check.outputs.has_signing == 'false'
+        run: |
+          cd android
+          ./gradlew assembleRelease \
+            --build-cache \
+            --parallel \
+            --workers=4
+        env:
+          JAVA_TOOL_OPTIONS: "-Xmx4g"
+
+      - name: Detect APK Path
+        id: apk-path
+        run: |
+          APK_PATH=$(find android/app/build/outputs/apk -name "*.apk" -type f | head -1)
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ APK not found!"
+            exit 1
+          fi
+          echo "apk_file=$APK_PATH" >> $GITHUB_OUTPUT
+          echo "apk_name=$(basename $APK_PATH)" >> $GITHUB_OUTPUT
+          echo "apk_size=$(du -h $APK_PATH | cut -f1)" >> $GITHUB_OUTPUT
+          echo "✅ APK: $APK_PATH"
+
+      - name: Generate Release Notes
+        id: release-notes
+        run: |
+          {
+            echo "## Smart Calculator ${{ steps.version.outputs.version }}"
+            echo ""
+            echo "### 📱 Release Information"
+            echo "- **Version:** ${{ steps.version.outputs.version }}"
+            echo "- **Build:** $(date +'%Y-%m-%d %H:%M UTC')"
+            echo "- **Commit:** ${{ github.sha }}"
+            echo "- **Size:** ${{ steps.apk-path.outputs.apk_size }}"
+            echo ""
+            echo "### 📥 Installation"
+            echo "1. Download the APK from release assets"
+            echo "2. Enable 'Unknown sources' in Android settings"
+            echo "3. Tap the APK file to install"
+            echo ""
+            echo "### ✨ Features"
+            echo "- Scientific calculator with advanced functions"
+            echo "- Dark mode support"
+            echo "- Gesture controls"
+            echo "- History tracking"
+            echo ""
+            echo "### 📝 Release Notes"
+            if [ -f "CHANGELOG.md" ]; then
+              cat CHANGELOG.md
+            else
+              echo "See commits for changes: ${{ github.server_url }}/${{ github.repository }}/commits/${{ github.ref_name }}"
+            fi
+          } >> RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.is_tag == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Smart Calculator ${{ steps.version.outputs.version }}
+          body_path: RELEASE_NOTES.md
+          files: ${{ steps.apk-path.outputs.apk_file }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Release APK as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartCalculator-Release-APK-${{ steps.version.outputs.version }}
+          path: ${{ steps.apk-path.outputs.apk_file }}
+          retention-days: 90
+
+      - name: Display Release Summary
+        run: |
+          echo "╔════════════════════════════════════════╗"
+          echo "║  🎉 Release APK Build Success         ║"
+          echo "╠════════════════════════════════════════╣"
+          echo "║  Version: ${{ steps.version.outputs.version }}"
+          echo "║  File: ${{ steps.apk-path.outputs.apk_name }}"
+          echo "║  Size: ${{ steps.apk-path.outputs.apk_size }}"
+          if [ "${{ steps.version.outputs.is_tag }}" = "true" ]; then
+            echo "║  📦 GitHub Release: Created"
+          else
+            echo "║  📦 GitHub Release: Skipped (no tag)"
+          fi
+          if [ "${{ steps.signing-check.outputs.has_signing }}" = "true" ]; then
+            echo "║  🔐 Signature: Signed"
+          else
+            echo "║  🔐 Signature: Unsigned"
+          fi
+          echo "╚════════════════════════════════════════╝"
+
+      - name: Post Release Summary
+        if: success()
+        run: |
+          echo "✅ **Release APK Build Successful!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 **Version:** ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **File:** ${{ steps.apk-path.outputs.apk_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "📈 **Size:** ${{ steps.apk-path.outputs.apk_size }}" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.version.outputs.is_tag }}" = "true" ]; then
+            echo "🎉 **Release:** GitHub Release created" >> $GITHUB_STEP_SUMMARY
+          fi

@@ -1,0 +1,25 @@
+{
+  "expo": {
+    "name": "Smart Calculator",
+    "slug": "smart-calculator",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": true,
+      "bundleIdentifier": "com.abhishektech.smartcalculator"
+    },
+    "android": {
+      "package": "com.abhishektech.smartcalculator",
+      "versionCode": 1,
+      "orientation": "portrait",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": []
+  }
+}
