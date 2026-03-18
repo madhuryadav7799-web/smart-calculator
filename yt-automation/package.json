@@ -1,0 +1,34 @@
+{
+  "name": "yt-automation-hinglish",
+  "version": "1.0.0",
+  "description": "YouTube Automation System - Tech stories in Hinglish with 3D animation",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js daemon",
+    "once": "node src/main.js once",
+    "status": "node src/main.js status",
+    "schedule": "node src/main.js schedule",
+    "scripts": "node src/main.js list-scripts",
+    "animate": "node src/main.js animate",
+    "test": "node -e \"const gen = require('./src/scriptGenerator'); const s = gen.generateScript(); console.log(s)\""
+  },
+  "keywords": [
+    "youtube",
+    "automation",
+    "hinglish",
+    "video-generation",
+    "elevenlabs",
+    "scheduling"
+  ],
+  "author": "Abhishek",
+  "license": "MIT",
+  "dependencies": {
+    "googleapis": "^118.0.0",
+    "google-auth-library": "^9.4.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

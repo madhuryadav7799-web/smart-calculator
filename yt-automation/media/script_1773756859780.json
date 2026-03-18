@@ -1,0 +1,8 @@
+{
+  "theme": "ai-insights",
+  "title": "LLMs Kya Hote Hain Really?",
+  "content": "Yo friends! 🤖\n\nLarge Language Model - ek fancy naam hai ek simple concept ka.\n\nLLM basically ek neural network hai jo:\nShodh karte hain patterns in text.\nJaante hain ki kaun sa word ke baad kaun sa word aata hai.\nIsse predictive text generate karte hain.\n\nTransformer architecture ne yeh possible banaya.\nAttention mechanism se model samajhta hai context.\n\nChatGPT ka secret kya tha?\nReinforcement Learning from Human Feedback!\n\nTraining ke baad:\nHumans ne model ko rate kiya - \"yeh response sahi hai\" ya \"galat hai\"\nModel ne learn kiya yeh preferences se.\n\nToh LLM = Text pattern recognition + Context understanding + Preference learning\n\nLekin LLM ke limitations bhi hain:\n- Hallucinate kar sakte hain (galat info dena)\n- Reasoning weak hai abhi\n- Real-time data nahi hota\n- Bias reflect kar sakte hain training data se\n\nToh use karo LLMs smartly!\nWriting, coding, brainstorming ke liye.\nCritical decisions ke liye blind trust mat karo.\n\nLike if you learned something, subscribe!",
+  "language": "hinglish",
+  "estimatedDuration": 35,
+  "timestamp": "2026-03-17T14:14:19.780Z"
+}

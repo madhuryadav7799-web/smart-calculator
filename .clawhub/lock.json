@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "skills": {
+    "whatsapp-business": {
+      "version": "1.0.3",
+      "installedAt": 1773759617734
+    },
+    "hindi": {
+      "version": "1.0.0",
+      "installedAt": 1773759624111
+    },
+    "openclaw-whatsapp": {
+      "version": "0.3.0",
+      "installedAt": 1773759706755
+    },
+    "self-improving-agent": {
+      "version": "3.0.5",
+      "installedAt": 1773801499153
+    },
+    "agent-browser-clawdbot": {
+      "version": "0.1.0",
+      "installedAt": 1773803270678
+    },
+    "react-native": {
+      "version": "1.0.0",
+      "installedAt": 1773805752752
+    }
+  }
+}

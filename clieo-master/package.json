@@ -1,0 +1,21 @@
+{
+  "name": "clieo-master",
+  "version": "2.0.0",
+  "description": "Clieo 2.0 Master - Complete AI Control System",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node server/index.js",
+    "install-deps": "npm install"
+  },
+  "keywords": ["ai", "control", "dashboard", "telegram"],
+  "author": "Abhishek",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.5.4",
+    "cors": "^2.8.5",
+    "uuid": "^9.0.0"
+  }
+}
