@@ -19,16 +19,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: 'apps/clieo-mobile/package-lock.json'
 
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
-          cache-dependency-path: 'apps/clieo-mobile/android/gradle.properties'
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
