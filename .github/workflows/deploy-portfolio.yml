@@ -3,29 +3,24 @@ name: Build & Deploy Portfolio
 on:
   push:
     branches: [main]
-    paths:
-      - 'apps/portfolio/**'
-      - '.github/workflows/deploy-portfolio.yml'
   workflow_dispatch:
 
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
 
-      - name: Setup Node.js 18
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
       - name: Install Dependencies
         working-directory: apps/portfolio
-        run: npm ci
+        run: npm install
 
       - name: Build Portfolio
         working-directory: apps/portfolio
@@ -36,32 +31,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: apps/portfolio/out
-          cname: abhishekmahur.dev
-
-      - name: Notify Telegram
-        if: success()
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-            echo "⚠️  Telegram secrets not configured"
-            exit 0
-          fi
-          
-          curl -X POST \
-            -F "chat_id=$TELEGRAM_CHAT_ID" \
-            -F "text=🎉 Portfolio deployed!\n\n📱 https://abhishekmahur.dev\n\n✨ Next.js + Dark Theme + Clieo Branding" \
-            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage"
 
       - name: Build Summary
         if: always()
-        run: |
-          echo "╔════════════════════════════════════════╗"
-          echo "║  Portfolio Build Complete              ║"
-          echo "╠════════════════════════════════════════╣"
-          echo "║ Status: ✅ DEPLOYED                    ║"
-          echo "║ URL: abhishekmahur.dev                ║"
-          echo "║ Framework: Next.js 14                  ║"
-          echo "║ Theme: Dark + Clieo Brand              ║"
-          echo "╚════════════════════════════════════════╝"
+        run: echo "✅ Portfolio deployed!"
