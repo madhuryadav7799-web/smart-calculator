@@ -10,50 +10,110 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
       
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'apps/smart-calculator/package-lock.json'
       
-      - name: Setup Java
-        uses: actions/setup-java@v3
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '11'
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+          cache-dependency-path: 'apps/smart-calculator/android/gradle.properties'
       
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2
-        with:
-          api-level: 34
-          build-tools: '34.0.0'
+        uses: android-actions/setup-android@v3
       
-      - name: Install dependencies
-        run: npm install
+      - name: Install Dependencies
+        working-directory: apps/smart-calculator
+        run: npm ci
       
-      - name: Prebuild Android
-        run: npm run prebuild -- --no-install
-      
-      - name: Build APK
+      - name: Create local.properties
+        working-directory: apps/smart-calculator/android
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleRelease
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          cat local.properties
       
-      - name: Upload APK
-        uses: actions/upload-artifact@v3
-        with:
-          name: SmartCalculator-APK
-          path: android/app/build/outputs/apk/release/app-release.apk
+      - name: Make Gradlew Executable
+        working-directory: apps/smart-calculator/android
+        run: chmod +x gradlew
       
-      - name: Copy to releases
+      - name: Build Android Debug APK
+        working-directory: apps/smart-calculator/android
         run: |
-          mkdir -p releases
-          cp android/app/build/outputs/apk/release/app-release.apk releases/SmartCalculator-final.apk
+          ./gradlew assembleDebug \
+            --build-cache \
+            --no-daemon
+        env:
+          JAVA_TOOL_OPTIONS: "-Xmx4g"
+          ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
       
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Verify APK Exists
+        working-directory: apps/smart-calculator
+        run: |
+          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          if [ -f "$APK_PATH" ]; then
+            echo "✅ APK found at: $APK_PATH"
+            ls -lh "$APK_PATH"
+          else
+            echo "❌ APK not found!"
+            echo "Contents of android/app/build/outputs/:"
+            find android/app/build/outputs/ -name "*.apk" 2>/dev/null || echo "No APK files found"
+            exit 1
+          fi
+      
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
         with:
-          files: releases/SmartCalculator-final.apk
+          name: SmartCalculator-Debug-APK
+          path: apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
+      
+      - name: Send APK to Telegram
+        if: success()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          APK_PATH="apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk"
+          
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "⚠️  Telegram secrets not configured, skipping send"
+            exit 0
+          fi
+          
+          echo "📤 Sending APK to Telegram..."
+          
+          curl -X POST \
+            -H "Content-Type: multipart/form-data" \
+            -F "chat_id=$TELEGRAM_CHAT_ID" \
+            -F "document=@$APK_PATH" \
+            -F "caption=🎉 Smart Calculator Debug APK\n\n📦 Build: $(date +'%Y-%m-%d %H:%M UTC')\n🔗 Commit: ${{ github.sha }}\n\n✅ Ready to install!" \
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument"
+          
+          echo "✅ APK sent to Telegram!"
+      
+      - name: Build Summary
+        if: always()
+        run: |
+          echo "╔════════════════════════════════════════╗"
+          echo "║  Build Summary                         ║"
+          echo "╠════════════════════════════════════════╣"
+          if [ -f "apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "║ Status: ✅ SUCCESS                     ║"
+            echo "║ APK: SmartCalculator-Debug-APK        ║"
+            echo "║ Size: $(du -h apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk | cut -f1)" || echo "║ Size: Unknown"
+            echo "║ Telegram: Sent ✅                      ║"
+          else
+            echo "║ Status: ❌ FAILED                      ║"
+          fi
+          echo "╚════════════════════════════════════════╝"
