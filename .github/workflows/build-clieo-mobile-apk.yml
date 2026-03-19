@@ -3,8 +3,6 @@ name: Build Clieo 2.0 Mobile APK
 on:
   push:
     branches: [ main ]
-    paths:
-      - 'apps/clieo-mobile/**'
   workflow_dispatch:
 
 jobs:
