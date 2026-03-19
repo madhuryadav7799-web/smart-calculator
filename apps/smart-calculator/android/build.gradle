@@ -39,3 +39,16 @@ allprojects {
         maven { url 'https://www.jitpack.io' }
     }
 }
+
+// Ensure all Android library modules (including Expo autolinked ones) share the same SDK config
+subprojects { subproject ->
+    subproject.plugins.withId("com.android.library") {
+        subproject.android {
+            compileSdkVersion rootProject.ext.compileSdkVersion
+            defaultConfig {
+                minSdkVersion rootProject.ext.minSdkVersion
+                targetSdkVersion rootProject.ext.targetSdkVersion
+            }
+        }
+    }
+}
