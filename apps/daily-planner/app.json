@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Daily Planner - हिंग्लिश Edition",
+    "slug": "daily-planner-hinglish",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTabletMode": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#1a1a2e"
+      },
+      "package": "com.clieo.dailyplanner"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Daily Planner to access your photos.",
+          "cameraPermission": "Allow Daily Planner to access your camera."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "daily-planner-hinglish"
+      }
+    }
+  }
+}

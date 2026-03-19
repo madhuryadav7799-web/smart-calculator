@@ -1,0 +1,25 @@
+{
+  "name": "daily-planner",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "^3.0.1",
+    "@react-navigation/bottom-tabs": "^7.15.5",
+    "@react-navigation/native": "^7.1.33",
+    "expo": "^55.0.8",
+    "expo-font": "^55.0.4",
+    "expo-router": "^55.0.7",
+    "expo-splash-screen": "^55.0.12",
+    "nativewind": "^4.2.3",
+    "tailwindcss": "^3.4.19",
+    "zustand": "^5.0.12"
+  }
+}
