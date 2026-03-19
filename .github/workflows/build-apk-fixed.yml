@@ -58,16 +58,15 @@ jobs:
           ANDROID_SDK_ROOT: ${{ env.ANDROID_HOME }}
 
       - name: Verify APK Exists
-        working-directory: apps/smart-calculator
         run: |
-          APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+          APK_PATH="apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk"
           if [ -f "$APK_PATH" ]; then
             echo "✅ APK found at: $APK_PATH"
             ls -lh "$APK_PATH"
           else
             echo "❌ APK not found!"
-            echo "Contents of android/app/build/outputs/:"
-            find android/app/build/outputs/ -name "*.apk" 2>/dev/null || echo "No APK files found"
+            echo "Contents of apps/smart-calculator/android/app/build/outputs/:"
+            find apps/smart-calculator/android/app/build/outputs/ -name "*.apk" 2>/dev/null || echo "No APK files found"
             exit 1
           fi
 
@@ -105,13 +104,15 @@ jobs:
       - name: Build Summary
         if: always()
         run: |
+          APK_PATH="apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk"
           echo "╔════════════════════════════════════════╗"
           echo "║  Build Summary                         ║"
           echo "╠════════════════════════════════════════╣"
-          if [ -f "apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+          if [ -f "$APK_PATH" ]; then
+            SIZE=$(du -h "$APK_PATH" | cut -f1)
             echo "║ Status: ✅ SUCCESS                     ║"
             echo "║ APK: SmartCalculator-Debug-APK        ║"
-            echo "║ Size: $(du -h apps/smart-calculator/android/app/build/outputs/apk/debug/app-debug.apk | cut -f1)" || echo "║ Size: Unknown"
+            echo "║ Size: $SIZE                            ║"
             echo "║ Telegram: Sent ✅                      ║"
           else
             echo "║ Status: ❌ FAILED                      ║"
